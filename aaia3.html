@@ -1,0 +1,1712 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>开源公益电子期刊平台门户</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.iconify.design/3/3.1.1/iconify.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fadeIn {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        .tab-button {
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        .tab-button.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(to right, #059669, #10b981);
+            border-radius: 3px;
+        }
+        .step-indicator {
+            transition: all 0.3s ease;
+        }
+        .step-indicator.active {
+            background: linear-gradient(to right, #059669, #10b981);
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(5, 150, 105, 0.3);
+        }
+        .step-indicator.completed {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .form-card {
+            transition: all 0.3s ease;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+        }
+        .form-card:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+        }
+        .author-card {
+            transition: all 0.2s ease;
+        }
+        .author-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .task-card {
+            transition: all 0.3s ease;
+        }
+        .task-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+        }
+        .timeline-item {
+            position: relative;
+            padding-left: 2rem;
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background-color: #e5e7eb;
+        }
+        .timeline-item:first-child::before {
+            top: 1rem;
+        }
+        .timeline-item:last-child::before {
+            bottom: calc(100% - 1rem);
+        }
+        .timeline-dot {
+            position: absolute;
+            left: -0.375rem;
+            top: 0.25rem;
+            width: 1.25rem;
+            height: 1.25rem;
+            border-radius: 50%;
+            background-color: #e5e7eb;
+            z-index: 1;
+        }
+        .timeline-dot.completed {
+            background: linear-gradient(to right, #059669, #10b981);
+        }
+        .timeline-dot.current {
+            background: linear-gradient(to right, #3b82f6, #6366f1);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+        }
+        .license-card {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .license-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        .license-card.selected {
+            border-color: #059669;
+            box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+        }
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .status-submitted {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+        .status-under-review {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+        .status-review-completed {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+        .status-decision-made {
+            background-color: #f0f9ff;
+            color: #0c4a6e;
+        }
+        .progress-bar {
+            transition: width 1s ease-in-out;
+        }
+        .drag-drop-area {
+            border: 2px dashed #d1d5db;
+            transition: all 0.3s ease;
+        }
+        .drag-drop-area.dragover {
+            border-color: #059669;
+            background-color: #ecfdf5;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 font-sans text-slate-900 min-h-screen">
+    <!-- 导航栏 -->
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-gradient-to-br from-emerald-600 to-teal-500 rounded-xl flex items-center justify-center text-white shadow-md">
+                    <span class="iconify w-6 h-6" data-icon="heroicons:academic-cap-20-solid"></span>
+                </div>
+                <div>
+                    <span class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-700 to-teal-600">开源学术期刊</span>
+                    <p class="text-xs text-slate-500 -mt-1">开放获取 · 同行评议 · 完全免费</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-8 text-sm font-medium text-slate-600">
+                <a class="hover:text-emerald-600 transition-colors" href="#about">关于期刊</a>
+                <a class="hover:text-emerald-600 transition-colors" href="#archive">往期文章</a>
+                <a class="hover:text-emerald-600 transition-colors" href="#editorial-board">编辑委员会</a>
+                <a class="hover:text-emerald-600 transition-colors" href="#help">投稿指南</a>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button class="p-2 text-slate-400 hover:text-emerald-600 transition-colors relative">
+                    <span class="iconify w-6 h-6" data-icon="heroicons:bell"></span>
+                    <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                </button>
+                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-300 border-2 border-white shadow-sm overflow-hidden">
+                    <img alt="User Avatar" class="w-full h-full object-cover" src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80">
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主体内容 -->
+    <main class="max-w-7xl mx-auto px-6 py-8">
+        <!-- 顶部标题与标签页切换 -->
+        <div class="mb-8">
+            <div class="flex justify-between items-end mb-6">
+                <div>
+                    <h1 class="text-3xl font-bold text-slate-800">开源公益电子期刊平台</h1>
+                    <p class="text-slate-500 mt-2">严谨的学术空间，透明的出版流程，完全免费开放获取</p>
+                </div>
+                <div class="flex items-center space-x-2 bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-700 px-4 py-2 rounded-lg text-sm font-semibold">
+                    <span class="iconify" data-icon="heroicons:clock-solid"></span>
+                    <span>平均审稿周期：21天</span>
+                </div>
+            </div>
+            
+            <!-- 三标签页切换 -->
+            <div class="border-b border-slate-200">
+                <div class="flex space-x-8">
+                    <button id="tab-submission" class="tab-button active text-lg font-semibold text-slate-800 py-3 px-1">
+                        <span class="flex items-center">
+                            <span class="iconify mr-2" data-icon="heroicons:document-arrow-up-solid"></span>
+                            论文投稿
+                        </span>
+                    </button>
+                    <button id="tab-review" class="tab-button text-lg font-semibold text-slate-600 py-3 px-1 hover:text-slate-800">
+                        <span class="flex items-center">
+                            <span class="iconify mr-2" data-icon="heroicons:clipboard-document-check-solid"></span>
+                            参与审稿
+                        </span>
+                    </button>
+                    <button id="tab-tracking" class="tab-button text-lg font-semibold text-slate-600 py-3 px-1 hover:text-slate-800">
+                        <span class="flex items-center">
+                            <span class="iconify mr-2" data-icon="heroicons:magnifying-glass-circle-solid"></span>
+                            投稿追踪
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 标签页A：论文投稿（多步表单向导） -->
+        <div id="submission-tab" class="tab-content">
+            <!-- 可视化进度条 -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-8">
+                <h2 class="text-xl font-bold text-slate-800 mb-6">提交新论文</h2>
+                
+                <div class="flex justify-between items-center mb-2">
+                    <div class="step-indicator flex items-center justify-center w-12 h-12 rounded-full bg-emerald-600 text-white font-bold shadow-lg">
+                        1
+                    </div>
+                    <div class="h-1 flex-1 mx-4 bg-slate-200">
+                        <div class="h-full bg-emerald-500 rounded-full progress-bar" style="width: 25%"></div>
+                    </div>
+                    <div class="step-indicator flex items-center justify-center w-12 h-12 rounded-full bg-slate-200 text-slate-500 font-bold">
+                        2
+                    </div>
+                    <div class="h-1 flex-1 mx-4 bg-slate-200"></div>
+                    <div class="step-indicator flex items-center justify-center w-12 h-12 rounded-full bg-slate-200 text-slate-500 font-bold">
+                        3
+                    </div>
+                    <div class="h-1 flex-1 mx-4 bg-slate-200"></div>
+                    <div class="step-indicator flex items-center justify-center w-12 h-12 rounded-full bg-slate-200 text-slate-500 font-bold">
+                        4
+                    </div>
+                </div>
+                
+                <div class="flex justify-between text-sm font-medium text-slate-600 mt-2">
+                    <div class="text-center w-12">基本信息</div>
+                    <div class="text-center flex-1 mx-4">作者信息</div>
+                    <div class="text-center flex-1 mx-4">上传文件</div>
+                    <div class="text-center flex-1 mx-4">确认提交</div>
+                    <div class="text-center w-12">完成</div>
+                </div>
+            </div>
+            
+            <!-- 分步表单 -->
+            <div id="submission-wizard">
+                <!-- 步骤1：论文核心信息 -->
+                <div id="step-1" class="form-step">
+                    <div class="bg-white rounded-2xl border border-slate-200 p-6 mb-6 form-card">
+                        <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center">
+                            <span class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mr-3">1</span>
+                            论文核心信息
+                        </h3>
+                        
+                        <div class="space-y-6">
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium text-slate-700">论文标题 *</label>
+                                <input type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all" placeholder="请输入论文标题，建议简明扼要" required>
+                                <p class="text-xs text-slate-500">标题应准确反映论文核心内容，不超过150个字符</p>
+                            </div>
+                            
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium text-slate-700">摘要 *</label>
+                                <textarea class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all h-40" placeholder="请提供论文摘要，包括研究目的、方法、结果和结论" required></textarea>
+                                <p class="text-xs text-slate-500">摘要应简明扼要，字数建议在200-300字之间</p>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="space-y-2">
+                                    <label class="text-sm font-medium text-slate-700">关键词 *</label>
+                                    <input type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all" placeholder="例如：机器学习，人工智能，数据挖掘" required>
+                                    <p class="text-xs text-slate-500">请输入3-5个关键词，用逗号分隔</p>
+                                </div>
+                                
+                                <div class="space-y-2">
+                                    <label class="text-sm font-medium text-slate-700">研究领域 *</label>
+                                    <div class="relative">
+                                        <select class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm appearance-none focus:ring-2 focus:ring-emerald-500 outline-none transition-all" required>
+                                            <option value="">请选择研究领域</option>
+                                            <option value="ai">人工智能与机器学习</option>
+                                            <option value="cs">计算机科学与工程</option>
+                                            <option value="math">数学与统计学</option>
+                                            <option value="physics">物理与天文学</option>
+                                            <option value="biology">生物学与生命科学</option>
+                                            <option value="chemistry">化学与材料科学</option>
+                                            <option value="engineering">工程与技术</option>
+                                            <option value="social">社会科学</option>
+                                            <option value="other">其他交叉学科</option>
+                                        </select>
+                                        <span class="iconify absolute right-3 top-3 text-slate-400 pointer-events-none" data-icon="heroicons:chevron-down"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium text-slate-700">参考文献格式</label>
+                                <div class="relative">
+                                    <select class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm appearance-none focus:ring-2 focus:ring-emerald-500 outline-none transition-all">
+                                        <option value="apa">APA 格式</option>
+                                        <option value="mla">MLA 格式</option>
+                                        <option value="chicago">Chicago 格式</option>
+                                        <option value="ieee">IEEE 格式</option>
+                                        <option value="harvard">Harvard 格式</option>
+                                        <option value="vancouver">Vancouver 格式</option>
+                                    </select>
+                                    <span class="iconify absolute right-3 top-3 text-slate-400 pointer-events-none" data-icon="heroicons:chevron-down"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between">
+                        <button class="px-6 py-3 bg-slate-200 text-slate-700 font-medium rounded-xl hover:bg-slate-300 transition-colors" disabled>上一步</button>
+                        <button class="px-6 py-3 bg-emerald-600 text-white font-medium rounded-xl hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-200 next-step" data-next="step-2">下一步：作者信息</button>
+                    </div>
+                </div>
+                
+                <!-- 步骤2：作者信息 -->
+                <div id="step-2" class="form-step hidden">
+                    <div class="bg-white rounded-2xl border border-slate-200 p-6 mb-6 form-card">
+                        <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center">
+                            <span class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mr-3">2</span>
+                            作者信息
+                            <span class="ml-2 text-sm font-normal text-slate-500">（请按贡献顺序添加作者）</span>
+                        </h3>
+                        
+                        <!-- 作者列表 -->
+                        <div id="authors-list" class="mb-6 space-y-4">
+                            <!-- 作者卡片1 -->
+                            <div class="author-card bg-slate-50 border border-slate-200 rounded-xl p-4">
+                                <div class="flex justify-between items-start mb-3">
+                                    <div>
+                                        <div class="flex items-center space-x-2 mb-1">
+                                            <span class="px-2 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold rounded">第一作者</span>
+                                            <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-bold rounded">通讯作者</span>
+                                        </div>
+                                        <h4 class="font-medium text-slate-800">张明 教授</h4>
+                                    </div>
+                                    <button class="text-slate-400 hover:text-rose-600 remove-author">
+                                        <span class="iconify" data-icon="heroicons:trash"></span>
+                                    </button>
+                                </div>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div class="space-y-2">
+                                        <label class="text-xs font-medium text-slate-600">所属机构</label>
+                                        <p class="text-sm text-slate-800">清华大学计算机科学与技术系</p>
+                                    </div>
+                                    <div class="space-y-2">
+                                        <label class="text-xs font-medium text-slate-600">电子邮箱</label>
+                                        <p class="text-sm text-slate-800">zhangming@tsinghua.edu.cn</p>
+                                    </div>
+                                    <div class="space-y-2">
+                                        <label class="text-xs font-medium text-slate-600">ORCID</label>
+                                        <p class="text-sm text-slate-800">0000-0001-2345-6789</p>
+                                    </div>
+                                    <div class="space-y-2">
+                                        <label class="text-xs font-medium text-slate-600">贡献说明</label>
+                                        <p class="text-sm text-slate-800">实验设计、数据分析和论文撰写</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 作者卡片2 -->
+                            <div class="author-card bg-slate-50 border border-slate-200 rounded-xl p-4">
+                                <div class="flex justify-between items-start mb-3">
+                                    <div>
+                                        <div class="flex items-center space-x-2 mb-1">
+                                            <span class="px-2 py-1 bg-slate-100 text-slate-800 text-xs font-bold rounded">共同作者</span>
+                                        </div>
+                                        <h4 class="font-medium text-slate-800">李华 博士</h4>
+                                    </div>
+                                    <button class="text-slate-400 hover:text-rose-600 remove-author">
+                                        <span class="iconify" data-icon="heroicons:trash"></span>
+                                    </button>
+                                </div>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div class="space-y-2">
+                                        <label class="text-xs font-medium text-slate-600">所属机构</label>
+                                        <p class="text-sm text-slate-800">北京大学信息科学技术学院</p>
+                                    </div>
+                                    <div class="space-y-2">
+                                        <label class="text-xs font-medium text-slate-600">电子邮箱</label>
+                                        <p class="text-sm text-slate-800">lihua@pku.edu.cn</p>
+                                    </div>
+                                    <div class="space-y-2">
+                                        <label class="text-xs font-medium text-slate-600">ORCID</label>
+                                        <p class="text-sm text-slate-800">0000-0002-3456-7890</p>
+                                    </div>
+                                    <div class="space-y-2">
+                                        <label class="text-xs font-medium text-slate-600">贡献说明</label>
+                                        <p class="text-sm text-slate-800">文献调研、方法验证</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 添加作者表单 -->
+                        <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-6">
+                            <h4 class="font-medium text-slate-800 mb-4">添加新作者</h4>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div class="space-y-2">
+                                    <label class="text-xs font-medium text-slate-600">姓名 *</label>
+                                    <input type="text" id="author-name" class="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="请输入作者姓名">
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-xs font-medium text-slate-600">所属机构 *</label>
+                                    <input type="text" id="author-affiliation" class="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="请输入所属机构">
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-xs font-medium text-slate-600">电子邮箱 *</label>
+                                    <input type="email" id="author-email" class="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="请输入电子邮箱">
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-xs font-medium text-slate-600">ORCID</label>
+                                    <input type="text" id="author-orcid" class="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="请输入ORCID标识符">
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-2 mb-4">
+                                <label class="text-xs font-medium text-slate-600">贡献说明</label>
+                                <textarea id="author-contribution" class="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none h-20" placeholder="请描述该作者在本文中的具体贡献"></textarea>
+                            </div>
+                            
+                            <div class="flex flex-wrap gap-3 mb-4">
+                                <label class="flex items-center space-x-2">
+                                    <input type="radio" name="author-role" value="first-author" class="text-emerald-600 focus:ring-emerald-500" checked>
+                                    <span class="text-sm text-slate-700">第一作者</span>
+                                </label>
+                                <label class="flex items-center space-x-2">
+                                    <input type="radio" name="author-role" value="corresponding-author" class="text-emerald-600 focus:ring-emerald-500">
+                                    <span class="text-sm text-slate-700">通讯作者</span>
+                                </label>
+                                <label class="flex items-center space-x-2">
+                                    <input type="radio" name="author-role" value="co-author" class="text-emerald-600 focus:ring-emerald-500">
+                                    <span class="text-sm text-slate-700">共同作者</span>
+                                </label>
+                            </div>
+                            
+                            <div class="flex justify-end">
+                                <button id="add-author-btn" class="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors">
+                                    <span class="iconify mr-1" data-icon="heroicons:plus"></span>
+                                    添加作者
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                            <div class="flex items-start">
+                                <span class="iconify text-blue-600 mr-3 mt-0.5" data-icon="heroicons:information-circle"></span>
+                                <div>
+                                    <h5 class="font-medium text-blue-800 mb-1">作者信息提示</h5>
+                                    <p class="text-sm text-blue-700">请确保所有作者的电子邮件地址准确无误，通讯作者将负责稿件提交后的所有通信事宜。所有作者都应知晓并同意投稿。</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between">
+                        <button class="px-6 py-3 bg-slate-200 text-slate-700 font-medium rounded-xl hover:bg-slate-300 transition-colors prev-step" data-prev="step-1">上一步</button>
+                        <button class="px-6 py-3 bg-emerald-600 text-white font-medium rounded-xl hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-200 next-step" data-next="step-3">下一步：上传文件</button>
+                    </div>
+                </div>
+                
+                <!-- 步骤3：文件上传 -->
+                <div id="step-3" class="form-step hidden">
+                    <div class="bg-white rounded-2xl border border-slate-200 p-6 mb-6 form-card">
+                        <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center">
+                            <span class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mr-3">3</span>
+                            上传文件
+                        </h3>
+                        
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            <!-- 上传区域 -->
+                            <div>
+                                <h4 class="font-medium text-slate-800 mb-4">上传论文文件</h4>
+                                
+                                <div id="drag-drop-area" class="drag-drop-area rounded-2xl p-8 text-center mb-6">
+                                    <div class="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4">
+                                        <span class="iconify w-8 h-8 text-emerald-600" data-icon="heroicons:cloud-arrow-up"></span>
+                                    </div>
+                                    <h5 class="font-medium text-slate-800 mb-2">拖放文件到这里</h5>
+                                    <p class="text-sm text-slate-500 mb-4">支持 PDF, DOC, DOCX 格式，最大 10MB</p>
+                                    <label class="inline-block px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors cursor-pointer">
+                                        <span class="iconify mr-1" data-icon="heroicons:magnifying-glass"></span>
+                                        选择文件
+                                        <input type="file" class="hidden" id="file-upload" accept=".pdf,.doc,.docx">
+                                    </label>
+                                </div>
+                                
+                                <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 mb-6">
+                                    <h5 class="font-medium text-emerald-800 mb-2 flex items-center">
+                                        <span class="iconify mr-2" data-icon="heroicons:sparkles"></span>
+                                        使用模板（推荐）
+                                    </h5>
+                                    <p class="text-sm text-emerald-700 mb-3">我们提供符合期刊格式的LaTeX和Word模板，使用模板可加快审稿流程。</p>
+                                    <div class="flex space-x-3">
+                                        <button class="flex-1 px-3 py-2 bg-white border border-emerald-300 text-emerald-700 text-sm font-medium rounded-lg hover:bg-emerald-50 transition-colors">
+                                            <span class="iconify mr-1" data-icon="heroicons:document-text"></span>
+                                            Word模板
+                                        </button>
+                                        <button class="flex-1 px-3 py-2 bg-white border border-emerald-300 text-emerald-700 text-sm font-medium rounded-lg hover:bg-emerald-50 transition-colors">
+                                            <span class="iconify mr-1" data-icon="heroicons:code-bracket"></span>
+                                            LaTeX模板
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 格式检查清单 -->
+                            <div>
+                                <h4 class="font-medium text-slate-800 mb-4">格式检查清单</h4>
+                                
+                                <div class="space-y-4">
+                                    <div class="flex items-start">
+                                        <div class="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
+                                            <span class="iconify w-4 h-4 text-emerald-600" data-icon="heroicons:check"></span>
+                                        </div>
+                                        <div>
+                                            <h5 class="font-medium text-slate-800">文件格式</h5>
+                                            <p class="text-sm text-slate-500">支持 PDF, DOC, DOCX 格式，已检测到您的文件符合要求</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex items-start">
+                                        <div class="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
+                                            <span class="iconify w-4 h-4 text-amber-600" data-icon="heroicons:exclamation-triangle"></span>
+                                        </div>
+                                        <div>
+                                            <h5 class="font-medium text-slate-800">匿名化处理</h5>
+                                            <p class="text-sm text-slate-500">请确保稿件已进行双盲审稿要求的匿名化处理</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex items-start">
+                                        <div class="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
+                                            <span class="iconify w-4 h-4 text-slate-400" data-icon="heroicons:clock"></span>
+                                        </div>
+                                        <div>
+                                            <h5 class="font-medium text-slate-800">图表质量</h5>
+                                            <p class="text-sm text-slate-500">上传后系统将自动检查图表分辨率是否满足要求</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex items-start">
+                                        <div class="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
+                                            <span class="iconify w-4 h-4 text-slate-400" data-icon="heroicons:clock"></span>
+                                        </div>
+                                        <div>
+                                            <h5 class="font-medium text-slate-800">参考文献完整性</h5>
+                                            <p class="text-sm text-slate-500">请确保所有引用的参考文献在文末列表中完整列出</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex items-start">
+                                        <div class="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
+                                            <span class="iconify w-4 h-4 text-slate-400" data-icon="heroicons:clock"></span>
+                                        </div>
+                                        <div>
+                                            <h5 class="font-medium text-slate-800">长度限制</h5>
+                                            <p class="text-sm text-slate-500">正文（不含参考文献）建议不超过8000字</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- 已上传文件列表 -->
+                                <div class="mt-8">
+                                    <h5 class="font-medium text-slate-800 mb-3">已上传文件</h5>
+                                    <div class="space-y-3">
+                                        <div class="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl p-3">
+                                            <div class="flex items-center">
+                                                <div class="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center mr-3">
+                                                    <span class="iconify text-emerald-600" data-icon="heroicons:document-text"></span>
+                                                </div>
+                                                <div>
+                                                    <h6 class="font-medium text-slate-800 text-sm">论文正文.pdf</h6>
+                                                    <p class="text-xs text-slate-500">2.4 MB · 上传于 2026-01-08 14:30</p>
+                                                </div>
+                                            </div>
+                                            <button class="text-slate-400 hover:text-rose-600">
+                                                <span class="iconify" data-icon="heroicons:trash"></span>
+                                            </button>
+                                        </div>
+                                        
+                                        <div class="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl p-3">
+                                            <div class="flex items-center">
+                                                <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center mr-3">
+                                                    <span class="iconify text-blue-600" data-icon="heroicons:chart-bar"></span>
+                                                </div>
+                                                <div>
+                                                    <h6 class="font-medium text-slate-800 text-sm">补充材料.zip</h6>
+                                                    <p class="text-xs text-slate-500">5.1 MB · 上传于 2026-01-08 14:32</p>
+                                                </div>
+                                            </div>
+                                            <button class="text-slate-400 hover:text-rose-600">
+                                                <span class="iconify" data-icon="heroicons:trash"></span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between">
+                        <button class="px-6 py-3 bg-slate-200 text-slate-700 font-medium rounded-xl hover:bg-slate-300 transition-colors prev-step" data-prev="step-2">上一步</button>
+                        <button class="px-6 py-3 bg-emerald-600 text-white font-medium rounded-xl hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-200 next-step" data-next="step-4">下一步：确认提交</button>
+                    </div>
+                </div>
+                
+                <!-- 步骤4：确认提交 -->
+                <div id="step-4" class="form-step hidden">
+                    <div class="bg-white rounded-2xl border border-slate-200 p-6 mb-6 form-card">
+                        <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center">
+                            <span class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mr-3">4</span>
+                            确认提交
+                        </h3>
+                        
+                        <!-- 信息汇总 -->
+                        <div class="mb-8">
+                            <h4 class="font-medium text-slate-800 mb-4">投稿信息汇总</h4>
+                            
+                            <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-4">
+                                <h5 class="font-medium text-slate-800 mb-2">论文信息</h5>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div class="space-y-1">
+                                        <p class="text-sm text-slate-600">标题</p>
+                                        <p class="text-sm text-slate-800 font-medium">基于深度学习的医学影像自动诊断方法研究</p>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <p class="text-sm text-slate-600">研究领域</p>
+                                        <p class="text-sm text-slate-800 font-medium">人工智能与机器学习</p>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <p class="text-sm text-slate-600">关键词</p>
+                                        <p class="text-sm text-slate-800 font-medium">深度学习, 医学影像, 自动诊断, 计算机视觉</p>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <p class="text-sm text-slate-600">参考文献格式</p>
+                                        <p class="text-sm text-slate-800 font-medium">IEEE 格式</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-6">
+                                <h5 class="font-medium text-slate-800 mb-2">作者信息 (2位)</h5>
+                                <div class="space-y-3">
+                                    <div class="flex justify-between items-center">
+                                        <div>
+                                            <p class="text-sm text-slate-800 font-medium">张明 教授</p>
+                                            <p class="text-xs text-slate-600">清华大学计算机科学与技术系</p>
+                                        </div>
+                                        <div class="flex space-x-2">
+                                            <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-xs font-medium rounded">第一作者</span>
+                                            <span class="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs font-medium rounded">通讯作者</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <div>
+                                            <p class="text-sm text-slate-800 font-medium">李华 博士</p>
+                                            <p class="text-xs text-slate-600">北京大学信息科学技术学院</p>
+                                        </div>
+                                        <div>
+                                            <span class="px-2 py-0.5 bg-slate-100 text-slate-800 text-xs font-medium rounded">共同作者</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                                <h5 class="font-medium text-slate-800 mb-2">上传文件 (2个)</h5>
+                                <div class="space-y-2">
+                                    <div class="flex items-center">
+                                        <span class="iconify text-slate-500 mr-2" data-icon="heroicons:document-text"></span>
+                                        <span class="text-sm text-slate-800">论文正文.pdf (2.4 MB)</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <span class="iconify text-slate-500 mr-2" data-icon="heroicons:chart-bar"></span>
+                                        <span class="text-sm text-slate-800">补充材料.zip (5.1 MB)</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 开源许可证选择 -->
+                        <div class="mb-8">
+                            <h4 class="font-medium text-slate-800 mb-4">选择开源许可证 *</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div class="license-card border border-slate-200 rounded-xl p-4" data-license="cc-by">
+                                    <div class="flex items-center mb-3">
+                                        <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center mr-3">
+                                            <span class="iconify text-blue-600" data-icon="heroicons:shield-check"></span>
+                                        </div>
+                                        <h5 class="font-medium text-slate-800">CC BY 4.0</h5>
+                                    </div>
+                                    <p class="text-sm text-slate-600 mb-3">允许他人分发、混编、改编您的作品，即使用于商业目的，只要注明您的署名。</p>
+                                    <div class="flex items-center text-sm text-blue-600">
+                                        <span class="iconify mr-1" data-icon="heroicons:check-circle"></span>
+                                        <span>最开放，推荐使用</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="license-card border border-slate-200 rounded-xl p-4" data-license="cc-by-sa">
+                                    <div class="flex items-center mb-3">
+                                        <div class="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center mr-3">
+                                            <span class="iconify text-emerald-600" data-icon="heroicons:arrow-path-rounded-square"></span>
+                                        </div>
+                                        <h5 class="font-medium text-slate-800">CC BY-SA 4.0</h5>
+                                    </div>
+                                    <p class="text-sm text-slate-600 mb-3">允许他人分发、混编、改编您的作品，但必须以相同许可证分享衍生作品。</p>
+                                    <div class="flex items-center text-sm text-emerald-600">
+                                        <span class="iconify mr-1" data-icon="heroicons:arrow-path"></span>
+                                        <span>要求相同方式共享</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="license-card border border-slate-200 rounded-xl p-4" data-license="cc-by-nc">
+                                    <div class="flex items-center mb-3">
+                                        <div class="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center mr-3">
+                                            <span class="iconify text-amber-600" data-icon="heroicons:no-symbol"></span>
+                                        </div>
+                                        <h5 class="font-medium text-slate-800">CC BY-NC 4.0</h5>
+                                    </div>
+                                    <p class="text-sm text-slate-600 mb-3">允许他人分发、混编、改编您的作品，但不得用于商业目的。</p>
+                                    <div class="flex items-center text-sm text-amber-600">
+                                        <span class="iconify mr-1" data-icon="heroicons:banknotes"></span>
+                                        <span>禁止商业使用</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <input type="hidden" id="selected-license" value="cc-by">
+                        </div>
+                        
+                        <!-- 原创性声明 -->
+                        <div class="mb-8">
+                            <h4 class="font-medium text-slate-800 mb-4">原创性声明 *</h4>
+                            <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-4">
+                                <div class="space-y-3">
+                                    <label class="flex items-start space-x-3">
+                                        <input type="checkbox" class="mt-1 text-emerald-600 focus:ring-emerald-500" required>
+                                        <span class="text-sm text-slate-700">我确认本论文是原创作品，未曾在其他刊物发表或同时投递，且不包含任何 plagiarism（剽窃）内容。</span>
+                                    </label>
+                                    <label class="flex items-start space-x-3">
+                                        <input type="checkbox" class="mt-1 text-emerald-600 focus:ring-emerald-500" required>
+                                        <span class="text-sm text-slate-700">我确认所有作者都已阅读并同意投稿，且论文内容不涉及任何利益冲突。</span>
+                                    </label>
+                                    <label class="flex items-start space-x-3">
+                                        <input type="checkbox" class="mt-1 text-emerald-600 focus:ring-emerald-500" required>
+                                        <span class="text-sm text-slate-700">我确认论文中使用的所有数据、图像和材料均已获得适当许可或属于公共领域。</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 提示信息 -->
+                        <div class="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-6">
+                            <div class="flex items-start mb-4">
+                                <div class="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center mr-4 flex-shrink-0">
+                                    <span class="iconify w-6 h-6 text-emerald-600" data-icon="heroicons:gift"></span>
+                                </div>
+                                <div>
+                                    <h5 class="font-bold text-emerald-800 text-lg mb-1">完全免费 & 快速周期</h5>
+                                    <p class="text-emerald-700">本期刊坚持开放获取原则，不收取任何文章处理费（APC）。平均审稿周期为21天，录用后立即在线发布，永久免费获取。</p>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div class="text-center">
+                                    <div class="text-2xl font-bold text-emerald-700 mb-1">¥0</div>
+                                    <div class="text-xs text-emerald-600">文章处理费</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-2xl font-bold text-emerald-700 mb-1">21天</div>
+                                    <div class="text-xs text-emerald-600">平均审稿周期</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-2xl font-bold text-emerald-700 mb-1">24小时</div>
+                                    <div class="text-xs text-emerald-600">录用后在线发布</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between">
+                        <button class="px-6 py-3 bg-slate-200 text-slate-700 font-medium rounded-xl hover:bg-slate-300 transition-colors prev-step" data-prev="step-3">上一步</button>
+                        <button id="submit-paper" class="px-6 py-3 bg-emerald-600 text-white font-medium rounded-xl hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-200 flex items-center">
+                            <span class="iconify mr-2" data-icon="heroicons:paper-airplane"></span>
+                            提交论文
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 标签页B：参与审稿 -->
+        <div id="review-tab" class="tab-content hidden">
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold text-slate-800 mb-2">审稿工作台</h2>
+                <p class="text-slate-500">管理您的审稿任务，为开源学术做出贡献</p>
+            </div>
+            
+            <!-- 任务三区看板 -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
+                <!-- 待处理区 -->
+                <div>
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-bold text-slate-800 flex items-center">
+                            <span class="w-3 h-3 rounded-full bg-amber-500 mr-2"></span>
+                            待处理
+                            <span class="ml-2 text-sm font-normal text-slate-500 bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">3</span>
+                        </h3>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <!-- 任务卡片1 -->
+                        <div class="task-card bg-white rounded-xl border border-slate-200 p-4">
+                            <div class="flex justify-between items-start mb-3">
+                                <div>
+                                    <div class="flex items-center space-x-2 mb-2">
+                                        <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-bold rounded">计算机科学</span>
+                                        <span class="px-2 py-1 bg-slate-100 text-slate-800 text-xs font-bold rounded">新投稿</span>
+                                    </div>
+                                    <h4 class="font-bold text-slate-800 text-sm mb-2">基于联邦学习的隐私保护医疗数据分析</h4>
+                                </div>
+                                <button class="text-slate-400 hover:text-slate-600">
+                                    <span class="iconify" data-icon="heroicons:ellipsis-vertical"></span>
+                                </button>
+                            </div>
+                            
+                            <p class="text-xs text-slate-500 mb-4 line-clamp-2">本研究提出了一种新型联邦学习框架，能够在保护患者隐私的前提下，实现跨机构医疗数据的协同分析...</p>
+                            
+                            <div class="flex justify-between items-center mb-4">
+                                <div class="text-xs text-slate-500">
+                                    邀请日期: <span class="font-medium text-slate-700">2026-01-06</span>
+                                </div>
+                                <div class="text-xs text-slate-500">
+                                    截止日期: <span class="font-medium text-amber-700">2026-01-20</span>
+                                </div>
+                            </div>
+                            
+                            <div class="flex space-x-2">
+                                <button class="flex-1 px-3 py-2 bg-emerald-600 text-white text-xs font-medium rounded-lg hover:bg-emerald-700 transition-colors">
+                                    <span class="iconify mr-1" data-icon="heroicons:play"></span>
+                                    开始审稿
+                                </button>
+                                <button class="flex-1 px-3 py-2 bg-slate-200 text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-300 transition-colors">
+                                    <span class="iconify mr-1" data-icon="heroicons:x-mark"></span>
+                                    婉拒
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- 任务卡片2 -->
+                        <div class="task-card bg-white rounded-xl border border-slate-200 p-4">
+                            <div class="flex justify-between items-start mb-3">
+                                <div>
+                                    <div class="flex items-center space-x-2 mb-2">
+                                        <span class="px-2 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold rounded">人工智能</span>
+                                        <span class="px-2 py-1 bg-slate-100 text-slate-800 text-xs font-bold rounded">修订稿</span>
+                                    </div>
+                                    <h4 class="font-bold text-slate-800 text-sm mb-2">可解释AI在医疗诊断决策中的应用研究</h4>
+                                </div>
+                                <button class="text-slate-400 hover:text-slate-600">
+                                    <span class="iconify" data-icon="heroicons:ellipsis-vertical"></span>
+                                </button>
+                            </div>
+                            
+                            <p class="text-xs text-slate-500 mb-4 line-clamp-2">作者已根据初审意见修改论文，重点增强了方法可解释性部分的实验验证和结果分析...</p>
+                            
+                            <div class="flex justify-between items-center mb-4">
+                                <div class="text-xs text-slate-500">
+                                    邀请日期: <span class="font-medium text-slate-700">2026-01-07</span>
+                                </div>
+                                <div class="text-xs text-slate-500">
+                                    截止日期: <span class="font-medium text-amber-700">2026-01-25</span>
+                                </div>
+                            </div>
+                            
+                            <div class="flex space-x-2">
+                                <button class="flex-1 px-3 py-2 bg-emerald-600 text-white text-xs font-medium rounded-lg hover:bg-emerald-700 transition-colors">
+                                    <span class="iconify mr-1" data-icon="heroicons:play"></span>
+                                    开始审稿
+                                </button>
+                                <button class="flex-1 px-3 py-2 bg-slate-200 text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-300 transition-colors">
+                                    <span class="iconify mr-1" data-icon="heroicons:x-mark"></span>
+                                    婉拒
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 进行中区 -->
+                <div>
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-bold text-slate-800 flex items-center">
+                            <span class="w-3 h-3 rounded-full bg-blue-500 mr-2"></span>
+                            进行中
+                            <span class="ml-2 text-sm font-normal text-slate-500 bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">2</span>
+                        </h3>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <!-- 任务卡片1 -->
+                        <div class="task-card bg-white rounded-xl border border-slate-200 p-4">
+                            <div class="flex justify-between items-start mb-3">
+                                <div>
+                                    <div class="flex items-center space-x-2 mb-2">
+                                        <span class="px-2 py-1 bg-purple-100 text-purple-800 text-xs font-bold rounded">数据科学</span>
+                                        <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-bold rounded">审稿中</span>
+                                    </div>
+                                    <h4 class="font-bold text-slate-800 text-sm mb-2">大规模时序数据异常检测算法比较研究</h4>
+                                </div>
+                                <button class="text-slate-400 hover:text-slate-600">
+                                    <span class="iconify" data-icon="heroicons:ellipsis-vertical"></span>
+                                </button>
+                            </div>
+                            
+                            <p class="text-xs text-slate-500 mb-4 line-clamp-2">本文系统比较了五种主流时序异常检测算法在三个公开数据集上的性能表现，并提出了改进建议...</p>
+                            
+                            <!-- 时间轴 -->
+                            <div class="mb-4">
+                                <div class="flex justify-between text-xs text-slate-500 mb-1">
+                                    <span>审稿进度</span>
+                                    <span>剩余: <span class="font-medium text-slate-700">7天</span></span>
+                                </div>
+                                <div class="h-2 bg-slate-100 rounded-full overflow-hidden mb-3">
+                                    <div class="h-full bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full progress-bar" style="width: 60%"></div>
+                                </div>
+                                
+                                <div class="flex justify-between text-xs">
+                                    <div class="text-center">
+                                        <div class="w-2 h-2 rounded-full bg-blue-600 mx-auto mb-1"></div>
+                                        <div class="text-slate-500">接受</div>
+                                        <div class="text-slate-700 font-medium">01-05</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="w-2 h-2 rounded-full bg-blue-600 mx-auto mb-1"></div>
+                                        <div class="text-slate-500">开始</div>
+                                        <div class="text-slate-700 font-medium">01-06</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="w-2 h-2 rounded-full bg-slate-300 mx-auto mb-1"></div>
+                                        <div class="text-slate-500">提交意见</div>
+                                        <div class="text-slate-700 font-medium">待完成</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="w-2 h-2 rounded-full bg-slate-300 mx-auto mb-1"></div>
+                                        <div class="text-slate-500">提交推荐</div>
+                                        <div class="text-slate-700 font-medium">待完成</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <button class="w-full px-3 py-2 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                                <span class="iconify mr-1" data-icon="heroicons:pencil"></span>
+                                继续审稿
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 已完成区 -->
+                <div>
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-bold text-slate-800 flex items-center">
+                            <span class="w-3 h-3 rounded-full bg-emerald-500 mr-2"></span>
+                            已完成
+                            <span class="ml-2 text-sm font-normal text-slate-500 bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">12</span>
+                        </h3>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <!-- 任务卡片1 -->
+                        <div class="task-card bg-white rounded-xl border border-slate-200 p-4">
+                            <div class="flex justify-between items-start mb-3">
+                                <div>
+                                    <div class="flex items-center space-x-2 mb-2">
+                                        <span class="px-2 py-1 bg-rose-100 text-rose-800 text-xs font-bold rounded">机器学习</span>
+                                        <span class="px-2 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold rounded">已录用</span>
+                                    </div>
+                                    <h4 class="font-bold text-slate-800 text-sm mb-2">基于Transformer的多模态情感分析模型</h4>
+                                </div>
+                                <button class="text-slate-400 hover:text-slate-600">
+                                    <span class="iconify" data-icon="heroicons:ellipsis-vertical"></span>
+                                </button>
+                            </div>
+                            
+                            <p class="text-xs text-slate-500 mb-4 line-clamp-2">本文提出了一种融合文本、图像和音频信息的Transformer模型，在三个公开数据集上取得了SOTA性能...</p>
+                            
+                            <div class="flex justify-between items-center mb-4">
+                                <div class="text-xs text-slate-500">
+                                    完成日期: <span class="font-medium text-slate-700">2026-01-03</span>
+                                </div>
+                                <div class="text-xs font-medium px-2 py-1 bg-emerald-100 text-emerald-800 rounded">
+                                    推荐: 接受
+                                </div>
+                            </div>
+                            
+                            <button class="w-full px-3 py-2 bg-slate-100 text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-200 transition-colors">
+                                <span class="iconify mr-1" data-icon="heroicons:eye"></span>
+                                查看详情
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 审稿统计 -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-6">
+                <h3 class="text-lg font-bold text-slate-800 mb-6">您的审稿贡献</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-emerald-700 mb-1">12</div>
+                        <div class="text-sm text-slate-600">已完成审稿</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-blue-700 mb-1">8.2</div>
+                        <div class="text-sm text-slate-600">平均审稿质量分</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-amber-700 mb-1">96%</div>
+                        <div class="text-sm text-slate-600">按时完成率</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-purple-700 mb-1">42</div>
+                        <div class="text-sm text-slate-600">审稿人积分</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 标签页C：投稿追踪 -->
+        <div id="tracking-tab" class="tab-content hidden">
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold text-slate-800 mb-2">投稿状态追踪</h2>
+                <p class="text-slate-500">实时追踪您的投稿状态，了解审稿进展</p>
+            </div>
+            
+            <!-- 投稿列表 -->
+            <div class="space-y-6 mb-12">
+                <!-- 投稿卡片1 -->
+                <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+                    <div class="p-6">
+                        <div class="flex justify-between items-start mb-6">
+                            <div>
+                                <div class="flex items-center space-x-2 mb-3">
+                                    <span class="status-badge status-under-review">审稿中</span>
+                                    <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-bold rounded">计算机科学</span>
+                                    <span class="px-2 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold rounded">CC BY 4.0</span>
+                                </div>
+                                <h3 class="text-xl font-bold text-slate-800 mb-2">基于深度学习的医学影像自动诊断方法研究</h3>
+                                <p class="text-slate-500">投稿ID: JRNL-2026-00128 · 投稿日期: 2026-01-05</p>
+                            </div>
+                            <button class="text-slate-400 hover:text-slate-600">
+                                <span class="iconify" data-icon="heroicons:ellipsis-vertical"></span>
+                            </button>
+                        </div>
+                        
+                        <!-- 时间轴可视化 -->
+                        <div class="mb-6">
+                            <h4 class="font-medium text-slate-800 mb-4">审稿进度时间轴</h4>
+                            
+                            <div class="space-y-6">
+                                <div class="timeline-item">
+                                    <div class="timeline-dot completed"></div>
+                                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                                        <div class="flex justify-between items-start mb-2">
+                                            <h5 class="font-medium text-slate-800">已提交</h5>
+                                            <span class="text-sm text-slate-500">2026-01-05 14:30</span>
+                                        </div>
+                                        <p class="text-sm text-slate-600">论文已成功提交至期刊系统，进入编辑初审阶段。</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="timeline-item">
+                                    <div class="timeline-dot completed"></div>
+                                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                                        <div class="flex justify-between items-start mb-2">
+                                            <h5 class="font-medium text-slate-800">格式检查通过</h5>
+                                            <span class="text-sm text-slate-500">2026-01-06 09:15</span>
+                                        </div>
+                                        <p class="text-sm text-slate-600">论文格式符合期刊要求，已通过技术审查。</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="timeline-item">
+                                    <div class="timeline-dot completed"></div>
+                                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                                        <div class="flex justify-between items-start mb-2">
+                                            <h5 class="font-medium text-slate-800">送审</h5>
+                                            <span class="text-sm text-slate-500">2026-01-07 11:20</span>
+                                        </div>
+                                        <p class="text-sm text-slate-600">论文已分配给3位审稿人进行同行评议。</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="timeline-item">
+                                    <div class="timeline-dot current"></div>
+                                    <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                                        <div class="flex justify-between items-start mb-2">
+                                            <h5 class="font-medium text-blue-800">审稿中</h5>
+                                            <span class="text-sm text-blue-600">2026-01-08 (进行中)</span>
+                                        </div>
+                                        <p class="text-sm text-blue-700">2/3位审稿人已提交审稿意见，等待最后一位审稿人意见。</p>
+                                        <div class="flex items-center mt-3">
+                                            <div class="w-full bg-blue-100 rounded-full h-2">
+                                                <div class="bg-blue-600 h-2 rounded-full" style="width: 66%"></div>
+                                            </div>
+                                            <span class="ml-3 text-sm font-medium text-blue-700">66%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="timeline-item">
+                                    <div class="timeline-dot"></div>
+                                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 opacity-60">
+                                        <div class="flex justify-between items-start mb-2">
+                                            <h5 class="font-medium text-slate-800">决定已出</h5>
+                                            <span class="text-sm text-slate-500">预计 2026-01-20</span>
+                                        </div>
+                                        <p class="text-sm text-slate-600">编辑将根据审稿意见做出最终决定。</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-between items-center pt-4 border-t border-slate-100">
+                            <div class="text-sm text-slate-600">
+                                预计完成日期: <span class="font-medium text-slate-800">2026-01-20</span>
+                            </div>
+                            <div class="flex space-x-3">
+                                <button class="px-4 py-2 bg-slate-100 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-200 transition-colors">
+                                    <span class="iconify mr-1" data-icon="heroicons:eye"></span>
+                                    查看详情
+                                </button>
+                                <button class="px-4 py-2 bg-rose-50 text-rose-700 text-sm font-medium rounded-lg hover:bg-rose-100 transition-colors">
+                                    <span class="iconify mr-1" data-icon="heroicons:arrow-uturn-left"></span>
+                                    撤回投稿
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 投稿卡片2 -->
+                <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+                    <div class="p-6">
+                        <div class="flex justify-between items-start mb-6">
+                            <div>
+                                <div class="flex items-center space-x-2 mb-3">
+                                    <span class="status-badge status-decision-made">决定已出</span>
+                                    <span class="px-2 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold rounded">人工智能</span>
+                                    <span class="px-2 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold rounded">CC BY 4.0</span>
+                                </div>
+                                <h3 class="text-xl font-bold text-slate-800 mb-2">面向边缘计算的轻量化神经网络架构设计</h3>
+                                <p class="text-slate-500">投稿ID: JRNL-2025-01245 · 投稿日期: 2025-12-10</p>
+                            </div>
+                            <button class="text-slate-400 hover:text-slate-600">
+                                <span class="iconify" data-icon="heroicons:ellipsis-vertical"></span>
+                            </button>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-6 text-center">
+                                <div class="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4">
+                                    <span class="iconify w-8 h-8 text-emerald-600" data-icon="heroicons:check-circle"></span>
+                                </div>
+                                <h4 class="text-xl font-bold text-emerald-800 mb-2">论文已被接受！</h4>
+                                <p class="text-emerald-700 mb-4">您的论文已经过同行评议并被接受发表。我们感谢您对开源学术的贡献。</p>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div class="text-center">
+                                        <div class="text-lg font-bold text-emerald-800 mb-1">2025-12-28</div>
+                                        <div class="text-sm text-emerald-600">决定日期</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="text-lg font-bold text-emerald-800 mb-1">JRNL2025.12.345</div>
+                                        <div class="text-sm text-emerald-600">DOI 编号</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="text-lg font-bold text-emerald-800 mb-1">2026-01-15</div>
+                                        <div class="text-sm text-emerald-600">预计发表日期</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-between items-center pt-4 border-t border-slate-100">
+                            <div class="text-sm text-slate-600">
+                                最终决定: <span class="font-medium text-emerald-700">接受发表</span>
+                            </div>
+                            <div class="flex space-x-3">
+                                <button class="px-4 py-2 bg-slate-100 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-200 transition-colors">
+                                    <span class="iconify mr-1" data-icon="heroicons:eye"></span>
+                                    查看审稿意见
+                                </button>
+                                <button class="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors">
+                                    <span class="iconify mr-1" data-icon="heroicons:document-check"></span>
+                                    签署出版协议
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 统计信息 -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white rounded-2xl border border-slate-200 p-6">
+                    <h3 class="font-bold text-slate-800 mb-4">投稿统计</h3>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <span class="text-slate-600">总投稿数</span>
+                            <span class="font-bold text-slate-800">8</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-slate-600">正在审稿中</span>
+                            <span class="font-bold text-blue-700">2</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-slate-600">已接受发表</span>
+                            <span class="font-bold text-emerald-700">5</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-slate-600">被拒绝/撤回</span>
+                            <span class="font-bold text-rose-700">1</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-2xl border border-slate-200 p-6">
+                    <h3 class="font-bold text-slate-800 mb-4">平均处理时间</h3>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <span class="text-slate-600">从投稿到初审</span>
+                            <span class="font-bold text-slate-800">3.2 天</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-slate-600">从送审到决定</span>
+                            <span class="font-bold text-slate-800">18.5 天</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-slate-600">从接受到在线发表</span>
+                            <span class="font-bold text-slate-800">2.1 天</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-2xl border border-slate-200 p-6">
+                    <h3 class="font-bold text-slate-800 mb-4">您的贡献</h3>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <span class="text-slate-600">文章总阅读量</span>
+                            <span class="font-bold text-slate-800">1,248 次</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-slate-600">文章总引用量</span>
+                            <span class="font-bold text-slate-800">23 次</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-slate-600">开放获取节省费用</span>
+                            <span class="font-bold text-emerald-700">¥0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-white border-t border-slate-200 py-12 px-6 mt-12">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0 text-slate-400 text-xs font-medium uppercase tracking-widest">
+            <div class="flex space-x-8">
+                <a class="hover:text-emerald-600 transition-colors" href="#">期刊介绍</a>
+                <a class="hover:text-emerald-600 transition-colors" href="#">编辑委员会</a>
+                <a class="hover:text-emerald-600 transition-colors" href="#">投稿指南</a>
+                <a class="hover:text-emerald-600 transition-colors" href="#">开放获取政策</a>
+            </div>
+            <div>© 2026 开源公益电子期刊平台. 基于知识共享协议开放获取.</div>
+            <div class="flex space-x-4">
+                <span class="iconify w-5 h-5 cursor-pointer hover:text-emerald-600 transition-colors" data-icon="fa-brands:orcid"></span>
+                <span class="iconify w-5 h-5 cursor-pointer hover:text-emerald-600 transition-colors" data-icon="fa-brands:google-scholar"></span>
+                <span class="iconify w-5 h-5 cursor-pointer hover:text-emerald-600 transition-colors" data-icon="fa-brands:github"></span>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // 标签页切换功能
+        const submissionTabBtn = document.getElementById('tab-submission');
+        const reviewTabBtn = document.getElementById('tab-review');
+        const trackingTabBtn = document.getElementById('tab-tracking');
+        
+        const submissionTabContent = document.getElementById('submission-tab');
+        const reviewTabContent = document.getElementById('review-tab');
+        const trackingTabContent = document.getElementById('tracking-tab');
+        
+        submissionTabBtn.addEventListener('click', () => {
+            setActiveTab(submissionTabBtn, submissionTabContent);
+        });
+        
+        reviewTabBtn.addEventListener('click', () => {
+            setActiveTab(reviewTabBtn, reviewTabContent);
+        });
+        
+        trackingTabBtn.addEventListener('click', () => {
+            setActiveTab(trackingTabBtn, trackingTabContent);
+        });
+        
+        function setActiveTab(tabButton, tabContent) {
+            // 移除所有标签页的active类
+            [submissionTabBtn, reviewTabBtn, trackingTabBtn].forEach(tab => {
+                tab.classList.remove('active');
+                tab.classList.remove('text-slate-800');
+                tab.classList.add('text-slate-600');
+            });
+            
+            // 隐藏所有标签页内容
+            [submissionTabContent, reviewTabContent, trackingTabContent].forEach(content => {
+                content.classList.add('hidden');
+            });
+            
+            // 激活当前标签页
+            tabButton.classList.add('active');
+            tabButton.classList.add('text-slate-800');
+            tabButton.classList.remove('text-slate-600');
+            
+            // 显示当前标签页内容
+            tabContent.classList.remove('hidden');
+        }
+        
+        // 论文投稿步骤向导
+        const formSteps = document.querySelectorAll('.form-step');
+        const nextButtons = document.querySelectorAll('.next-step');
+        const prevButtons = document.querySelectorAll('.prev-step');
+        const stepIndicators = document.querySelectorAll('.step-indicator');
+        const progressBar = document.querySelector('.progress-bar');
+        
+        let currentStep = 1;
+        const totalSteps = 4;
+        
+        // 下一步按钮
+        nextButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const nextStepId = button.getAttribute('data-next');
+                const currentStepId = `step-${currentStep}`;
+                
+                // 验证当前步骤
+                if (validateStep(currentStep)) {
+                    // 更新步骤指示器
+                    stepIndicators[currentStep - 1].classList.remove('active');
+                    stepIndicators[currentStep - 1].classList.add('completed');
+                    
+                    // 显示下一步
+                    document.getElementById(currentStepId).classList.add('hidden');
+                    document.getElementById(nextStepId).classList.remove('hidden');
+                    
+                    // 更新当前步骤
+                    currentStep = parseInt(nextStepId.split('-')[1]);
+                    
+                    // 更新步骤指示器
+                    stepIndicators[currentStep - 1].classList.add('active');
+                    
+                    // 更新进度条
+                    const progressPercentage = ((currentStep - 1) / (totalSteps - 1)) * 100;
+                    progressBar.style.width = `${progressPercentage}%`;
+                }
+            });
+        });
+        
+        // 上一步按钮
+        prevButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                if (!button.disabled) {
+                    const prevStepId = button.getAttribute('data-prev');
+                    const currentStepId = `step-${currentStep}`;
+                    
+                    // 更新步骤指示器
+                    stepIndicators[currentStep - 1].classList.remove('active');
+                    
+                    // 显示上一步
+                    document.getElementById(currentStepId).classList.add('hidden');
+                    document.getElementById(prevStepId).classList.remove('hidden');
+                    
+                    // 更新当前步骤
+                    currentStep = parseInt(prevStepId.split('-')[1]);
+                    
+                    // 更新步骤指示器
+                    stepIndicators[currentStep - 1].classList.add('active');
+                    
+                    // 更新进度条
+                    const progressPercentage = ((currentStep - 1) / (totalSteps - 1)) * 100;
+                    progressBar.style.width = `${progressPercentage}%`;
+                }
+            });
+        });
+        
+        // 步骤验证函数
+        function validateStep(step) {
+            let isValid = true;
+            
+            if (step === 1) {
+                // 验证第一步
+                const title = document.querySelector('#step-1 input[type="text"]');
+                const abstract = document.querySelector('#step-1 textarea');
+                const keywords = document.querySelector('#step-1 input[placeholder*="关键词"]');
+                const field = document.querySelector('#step-1 select');
+                
+                if (!title.value.trim()) {
+                    alert('请填写论文标题');
+                    title.focus();
+                    isValid = false;
+                } else if (!abstract.value.trim()) {
+                    alert('请填写论文摘要');
+                    abstract.focus();
+                    isValid = false;
+                } else if (!keywords.value.trim()) {
+                    alert('请填写关键词');
+                    keywords.focus();
+                    isValid = false;
+                } else if (!field.value) {
+                    alert('请选择研究领域');
+                    field.focus();
+                    isValid = false;
+                }
+            }
+            
+            // 这里可以添加其他步骤的验证逻辑
+            
+            return isValid;
+        }
+        
+        // 作者管理功能
+        const addAuthorBtn = document.getElementById('add-author-btn');
+        const authorsList = document.getElementById('authors-list');
+        const removeAuthorButtons = document.querySelectorAll('.remove-author');
+        
+        addAuthorBtn.addEventListener('click', () => {
+            const name = document.getElementById('author-name').value;
+            const affiliation = document.getElementById('author-affiliation').value;
+            const email = document.getElementById('author-email').value;
+            const orcid = document.getElementById('author-orcid').value;
+            const contribution = document.getElementById('author-contribution').value;
+            const role = document.querySelector('input[name="author-role"]:checked').value;
+            
+            if (!name || !affiliation || !email) {
+                alert('请填写必填字段：姓名、所属机构和电子邮箱');
+                return;
+            }
+            
+            // 创建作者卡片
+            const authorCard = document.createElement('div');
+            authorCard.className = 'author-card bg-slate-50 border border-slate-200 rounded-xl p-4';
+            
+            // 角色标签
+            let roleBadge = '';
+            if (role === 'first-author') {
+                roleBadge = '<span class="px-2 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold rounded">第一作者</span>';
+            } else if (role === 'corresponding-author') {
+                roleBadge = '<span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-bold rounded">通讯作者</span>';
+            } else {
+                roleBadge = '<span class="px-2 py-1 bg-slate-100 text-slate-800 text-xs font-bold rounded">共同作者</span>';
+            }
+            
+            authorCard.innerHTML = `
+                <div class="flex justify-between items-start mb-3">
+                    <div>
+                        <div class="flex items-center space-x-2 mb-1">
+                            ${roleBadge}
+                        </div>
+                        <h4 class="font-medium text-slate-800">${name}</h4>
+                    </div>
+                    <button class="text-slate-400 hover:text-rose-600 remove-author">
+                        <span class="iconify" data-icon="heroicons:trash"></span>
+                    </button>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <label class="text-xs font-medium text-slate-600">所属机构</label>
+                        <p class="text-sm text-slate-800">${affiliation}</p>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-xs font-medium text-slate-600">电子邮箱</label>
+                        <p class="text-sm text-slate-800">${email}</p>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-xs font-medium text-slate-600">ORCID</label>
+                        <p class="text-sm text-slate-800">${orcid || '未提供'}</p>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-xs font-medium text-slate-600">贡献说明</label>
+                        <p class="text-sm text-slate-800">${contribution || '未提供'}</p>
+                    </div>
+                </div>
+            `;
+            
+            authorsList.appendChild(authorCard);
+            
+            // 添加删除功能
+            authorCard.querySelector('.remove-author').addEventListener('click', function() {
+                this.closest('.author-card').remove();
+            });
+            
+            // 清空表单
+            document.getElementById('author-name').value = '';
+            document.getElementById('author-affiliation').value = '';
+            document.getElementById('author-email').value = '';
+            document.getElementById('author-orcid').value = '';
+            document.getElementById('author-contribution').value = '';
+            document.querySelector('input[name="author-role"][value="first-author"]').checked = true;
+            
+            alert('作者已添加成功！');
+        });
+        
+        // 为现有删除按钮添加事件
+        removeAuthorButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                this.closest('.author-card').remove();
+            });
+        });
+        
+        // 文件上传区域交互
+        const dragDropArea = document.getElementById('drag-drop-area');
+        const fileUpload = document.getElementById('file-upload');
+        
+        // 拖放功能
+        dragDropArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dragDropArea.classList.add('dragover');
+        });
+        
+        dragDropArea.addEventListener('dragleave', () => {
+            dragDropArea.classList.remove('dragover');
+        });
+        
+        dragDropArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dragDropArea.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileUpload(files[0]);
+            }
+        });
+        
+        fileUpload.addEventListener('change', (e) => {
+            if (fileUpload.files.length > 0) {
+                handleFileUpload(fileUpload.files[0]);
+            }
+        });
+        
+        function handleFileUpload(file) {
+            // 检查文件类型
+            const validTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+            if (!validTypes.includes(file.type)) {
+                alert('不支持的文件格式，请上传PDF、DOC或DOCX文件');
+                return;
+            }
+            
+            // 检查文件大小 (10MB)
+            if (file.size > 10 * 1024 * 1024) {
+                alert('文件过大，请上传小于10MB的文件');
+                return;
+            }
+            
+            // 更新UI显示
+            dragDropArea.innerHTML = `
+                <div class="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4">
+                    <span class="iconify w-8 h-8 text-emerald-600" data-icon="heroicons:check-circle"></span>
+                </div>
+                <h5 class="font-medium text-slate-800 mb-2">${file.name}</h5>
+                <p class="text-sm text-slate-500 mb-4">${(file.size / (1024 * 1024)).toFixed(2)} MB · 上传成功</p>
+                <label class="inline-block px-4 py-2 bg-slate-200 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-300 transition-colors cursor-pointer">
+                    <span class="iconify mr-1" data-icon="heroicons:arrow-path"></span>
+                    重新选择
+                    <input type="file" class="hidden" id="file-upload" accept=".pdf,.doc,.docx">
+                </label>
+            `;
+            
+            // 重新绑定文件上传事件
+            document.querySelector('#drag-drop-area input[type="file"]').addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    handleFileUpload(e.target.files[0]);
+                }
+            });
+            
+            alert(`文件"${file.name}"上传成功！`);
+        }
+        
+        // 开源许可证选择
+        const licenseCards = document.querySelectorAll('.license-card');
+        const selectedLicenseInput = document.getElementById('selected-license');
+        
+        licenseCards.forEach(card => {
+            card.addEventListener('click', () => {
+                // 移除所有选中状态
+                licenseCards.forEach(c => c.classList.remove('selected'));
+                
+                // 添加当前选中状态
+                card.classList.add('selected');
+                
+                // 更新隐藏输入值
+                selectedLicenseInput.value = card.getAttribute('data-license');
+            });
+        });
+        
+        // 提交论文
+        document.getElementById('submit-paper').addEventListener('click', () => {
+            // 检查原创性声明
+            const checkboxes = document.querySelectorAll('#step-4 input[type="checkbox"]');
+            let allChecked = true;
+            
+            checkboxes.forEach(checkbox => {
+                if (!checkbox.checked) {
+                    allChecked = false;
+                }
+            });
+            
+            if (!allChecked) {
+                alert('请确认所有原创性声明条款');
+                return;
+            }
+            
+            // 检查许可证选择
+            if (!selectedLicenseInput.value) {
+                alert('请选择开源许可证');
+                return;
+            }
+            
+            // 提交成功
+            alert('论文提交成功！您的稿件已进入审稿流程。您可以在"投稿追踪"页面查看审稿进展。');
+            
+            // 跳转到追踪页面
+            trackingTabBtn.click();
+        });
+        
+        // 审稿功能
+        // 开始审稿按钮
+        document.querySelectorAll('.bg-emerald-600').forEach(button => {
+            if (button.textContent.includes('开始审稿')) {
+                button.addEventListener('click', function() {
+                    alert('即将打开审稿界面，请仔细阅读论文并提供详细审稿意见。');
+                });
+            }
+        });
+        
+        // 婉拒审稿按钮
+        document.querySelectorAll('.bg-slate-200').forEach(button => {
+            if (button.textContent.includes('婉拒')) {
+                button.addEventListener('click', function() {
+                    if (confirm('确定要婉拒这项审稿邀请吗？')) {
+                        const taskCard = this.closest('.task-card');
+                        taskCard.style.opacity = '0.5';
+                        taskCard.style.pointerEvents = 'none';
+                        alert('已婉拒审稿邀请。感谢您的回复！');
+                    }
+                });
+            }
+        });
+        
+        // 继续审稿按钮
+        document.querySelectorAll('.bg-blue-600').forEach(button => {
+            if (button.textContent.includes('继续审稿')) {
+                button.addEventListener('click', function() {
+                    alert('继续审稿，跳转到审稿编辑页面...');
+                });
+            }
+        });
+        
+        // 撤回投稿按钮
+        document.querySelectorAll('.bg-rose-50').forEach(button => {
+            if (button.textContent.includes('撤回投稿')) {
+                button.addEventListener('click', function() {
+                    if (confirm('确定要撤回这篇投稿吗？撤回后不可恢复。')) {
+                        alert('投稿撤回请求已提交，编辑将在1-3个工作日内处理。');
+                    }
+                });
+            }
+        });
+        
+        // 签署出版协议按钮
+        document.querySelectorAll('.bg-emerald-600').forEach(button => {
+            if (button.textContent.includes('签署出版协议')) {
+                button.addEventListener('click', function() {
+                    alert('即将打开出版协议签署页面...');
+                });
+            }
+        });
+        
+        // 初始加载时显示第一个标签页
+        submissionTabBtn.click();
+    </script>
+</body>
+</html>
